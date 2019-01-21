@@ -963,6 +963,10 @@ static void IN_Move_TouchScreen_Quake(void)
 	cl.viewangles[1] -= aim[0] * cl_yawspeed.value * cl.realframetime;
 }
 
+#ifdef __ANDROID__
+void IN_Move_Android( void );
+#endif
+
 void IN_Move( void )
 {
 	static int old_x = 0, old_y = 0;
@@ -1044,7 +1048,9 @@ void IN_Move( void )
 		in_windowmouse_x = x;
 		in_windowmouse_y = y;
 	}
-
+#ifdef __ANDROID__
+    IN_Move_Android( );
+#endif
 	VID_BuildJoyState(&joystate);
 	VID_ApplyJoyState(&joystate);
 }
@@ -2613,7 +2619,11 @@ static qboolean VID_InitModeGL(viddef_mode_t *mode)
 		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 8);
 		SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 8);
 		SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, 8);
+#ifdef __ANDROID__
+		SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 16);
+#else
 		SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 24);
+#endif
 		SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 8);
 	}
 	else
@@ -2687,6 +2697,12 @@ static qboolean VID_InitModeGL(viddef_mode_t *mode)
 
 #if SDL_MAJOR_VERSION != 1
 	SDL_GL_SetSwapInterval(vid_vsync.integer != 0);
+
+// Force this ON for Android, otherwise wierd stuttering on some devices (N 2013)
+#ifdef __ANDROID__
+	SDL_GL_SetSwapInterval(1);
+#endif
+
 	vid_usingvsync = (vid_vsync.integer != 0);
 #endif
 

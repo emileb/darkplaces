@@ -40,6 +40,7 @@
 "#if (defined(GLSL120) || defined(GLSL130) || defined(GLSL140) || defined(GLES)) && defined(VERTEX_SHADER)\n"
 "invariant gl_Position; // fix for lighting polygons not matching base surface\n",
 "# endif\n",
+"precision highp float;\n",
 "#if defined(GLSL130) || defined(GLSL140)\n",
 "precision highp float;\n",
 "# ifdef VERTEX_SHADER\n",
@@ -815,6 +816,7 @@
 "uniform mediump vec3 FogColor;\n",
 "\n",
 "#ifdef USEFOG\n",
+"precision highp float;\n",
 "uniform highp float FogRangeRecip;\n",
 "uniform highp float FogPlaneViewDist;\n",
 "uniform highp float FogHeightFade;\n",

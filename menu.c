@@ -3299,7 +3299,9 @@ static void M_Quit_Key (int key, int ascii)
 			m_state = m_none;
 		}
 		break;
-
+#ifdef __ANDROID__
+	case K_ENTER:
+#endif
 	case 'Y':
 	case 'y':
 		Host_Quit_f ();

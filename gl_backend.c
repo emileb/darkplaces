@@ -8,6 +8,14 @@ extern LPDIRECT3DDEVICE9 vid_d3d9dev;
 extern D3DCAPS9 vid_d3d9caps;
 #endif
 
+
+#ifdef __ANDROID__
+int android_reset_vertex = 0;
+int android_reset_color  = 0;
+int android_reset_tex    = 0;
+#endif
+
+
 // on GLES we have to use some proper #define's
 #ifndef GL_FRAMEBUFFER
 #define GL_FRAMEBUFFER                                   0x8D40
@@ -1156,6 +1164,9 @@ void R_Viewport_InitRectSideView(r_viewport_t *v, const matrix4x4_t *cameramatri
 
 void R_SetViewport(const r_viewport_t *v)
 {
+#ifdef __ANDROID__
+    R_ResetProgram();
+#endif
 	gl_viewport = *v;
 
 	// FIXME: v_flipped_state is evil, this probably breaks somewhere
@@ -3568,8 +3579,9 @@ void R_Mesh_VertexPointer(int components, int gltype, size_t stride, const void 
 		break;
 	case RENDERPATH_GL20:
 	case RENDERPATH_GLES2:
-		if (gl_state.pointer_vertex_components != components || gl_state.pointer_vertex_gltype != gltype || gl_state.pointer_vertex_stride != stride || gl_state.pointer_vertex_pointer != pointer || gl_state.pointer_vertex_vertexbuffer != vertexbuffer || gl_state.pointer_vertex_offset != bufferoffset)
+		if (android_reset_vertex || gl_state.pointer_vertex_components != components || gl_state.pointer_vertex_gltype != gltype || gl_state.pointer_vertex_stride != stride || gl_state.pointer_vertex_pointer != pointer || gl_state.pointer_vertex_vertexbuffer != vertexbuffer || gl_state.pointer_vertex_offset != bufferoffset)
 		{
+		    android_reset_vertex = 0;
 			int bufferobject = vertexbuffer ? vertexbuffer->bufferobject : 0;
 			gl_state.pointer_vertex_components = components;
 			gl_state.pointer_vertex_gltype = gltype;
@@ -3652,8 +3664,9 @@ void R_Mesh_ColorPointer(int components, int gltype, size_t stride, const void *
 				CHECKGLERROR
 				qglEnableVertexAttribArray(GLSLATTRIB_COLOR);CHECKGLERROR
 			}
-			if (gl_state.pointer_color_components != components || gl_state.pointer_color_gltype != gltype || gl_state.pointer_color_stride != stride || gl_state.pointer_color_pointer != pointer || gl_state.pointer_color_vertexbuffer != vertexbuffer || gl_state.pointer_color_offset != bufferoffset)
+			if (android_reset_color || gl_state.pointer_color_components != components || gl_state.pointer_color_gltype != gltype || gl_state.pointer_color_stride != stride || gl_state.pointer_color_pointer != pointer || gl_state.pointer_color_vertexbuffer != vertexbuffer || gl_state.pointer_color_offset != bufferoffset)
 			{
+			    android_reset_color = 0;
 				gl_state.pointer_color_components = components;
 				gl_state.pointer_color_gltype = gltype;
 				gl_state.pointer_color_stride = stride;
@@ -3749,8 +3762,9 @@ void R_Mesh_TexCoordPointer(unsigned int unitnum, int components, int gltype, si
 				qglEnableVertexAttribArray(unitnum+GLSLATTRIB_TEXCOORD0);CHECKGLERROR
 			}
 			// texcoord array
-			if (unit->pointer_texcoord_components != components || unit->pointer_texcoord_gltype != gltype || unit->pointer_texcoord_stride != stride || unit->pointer_texcoord_pointer != pointer || unit->pointer_texcoord_vertexbuffer != vertexbuffer || unit->pointer_texcoord_offset != bufferoffset)
+			if (android_reset_tex || unit->pointer_texcoord_components != components || unit->pointer_texcoord_gltype != gltype || unit->pointer_texcoord_stride != stride || unit->pointer_texcoord_pointer != pointer || unit->pointer_texcoord_vertexbuffer != vertexbuffer || unit->pointer_texcoord_offset != bufferoffset)
 			{
+			    android_reset_tex = 0;
 				unit->pointer_texcoord_components = components;
 				unit->pointer_texcoord_gltype = gltype;
 				unit->pointer_texcoord_stride = stride;

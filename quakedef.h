@@ -48,6 +48,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qtypes.h"
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"DP", __VA_ARGS__))
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "DP", __VA_ARGS__))
+#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR,"DP", __VA_ARGS__))
+#endif
+
 extern const char *buildstring;
 extern char engineversion[128];
 

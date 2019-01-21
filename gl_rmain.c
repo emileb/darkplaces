@@ -220,7 +220,11 @@ cvar_t r_bloom_colorexponent = {CVAR_SAVE, "r_bloom_colorexponent", "1", "how ex
 cvar_t r_bloom_colorsubtract = {CVAR_SAVE, "r_bloom_colorsubtract", "0.125", "reduces bloom colors by a certain amount"};
 cvar_t r_bloom_scenebrightness = {CVAR_SAVE, "r_bloom_scenebrightness", "1", "global rendering brightness when bloom is enabled"};
 
+#ifdef __ANDROID__ // Default needs to be brighter IMO
+cvar_t r_hdr_scenebrightness = {CVAR_SAVE, "r_hdr_scenebrightness", "2.5", "global rendering brightness"};
+#else
 cvar_t r_hdr_scenebrightness = {CVAR_SAVE, "r_hdr_scenebrightness", "1", "global rendering brightness"};
+#endif
 cvar_t r_hdr_glowintensity = {CVAR_SAVE, "r_hdr_glowintensity", "1", "how bright light emitting textures should appear"};
 cvar_t r_hdr_irisadaptation = {CVAR_SAVE, "r_hdr_irisadaptation", "0", "adjust scene brightness according to light intensity at player location"};
 cvar_t r_hdr_irisadaptation_multiplier = {CVAR_SAVE, "r_hdr_irisadaptation_multiplier", "2", "brightness at which value will be 1.0"};
@@ -7240,6 +7244,19 @@ static void R_SortEntities(void)
 	qsort(r_refdef.scene.entities, r_refdef.scene.numentities, sizeof(*r_refdef.scene.entities), R_SortEntities_Compare);
 }
 
+#ifdef __ANDROID__
+// The touch controls will change the GL program, this resets it
+void R_ResetProgram()
+{
+    if( r_glsl_permutation != NULL && r_glsl_permutation->program)
+	{
+        qglUseProgram(r_glsl_permutation->program);CHECKGLERROR
+	    if (r_glsl_permutation->loc_ModelViewProjectionMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewProjectionMatrix, 1, false, gl_modelviewprojection16f);
+	    if (r_glsl_permutation->loc_ModelViewMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewMatrix, 1, false, gl_modelview16f);
+	    if (r_glsl_permutation->loc_ClientTime >= 0) qglUniform1f(r_glsl_permutation->loc_ClientTime, cl.time);
+	}
+}
+#endif
 /*
 ================
 R_RenderView
