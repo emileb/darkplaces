@@ -2,7 +2,7 @@ LOCAL_PATH:= $(call my-dir)/../
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := darkplaces
+LOCAL_MODULE := darkplaces_r12337
 
 LOCAL_DISABLE_FORMAT_STRING_CHECKS := true
 

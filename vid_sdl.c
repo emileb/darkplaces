@@ -2085,7 +2085,7 @@ void VID_Init (void)
 #endif
 #endif
 #ifdef DP_MOBILETOUCH
-	Cvar_SetValueQuick(&vid_touchscreen, 1);
+	//Cvar_SetValueQuick(&vid_touchscreen, 1);
 #endif
 
 #ifdef SDL_R_RESTART
