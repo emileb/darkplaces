@@ -221,7 +221,7 @@ cvar_t r_bloom_colorsubtract = {CVAR_SAVE, "r_bloom_colorsubtract", "0.125", "re
 cvar_t r_bloom_scenebrightness = {CVAR_SAVE, "r_bloom_scenebrightness", "1", "global rendering brightness when bloom is enabled"};
 
 #ifdef __ANDROID__ // Default needs to be brighter IMO
-cvar_t r_hdr_scenebrightness = {CVAR_SAVE, "r_hdr_scenebrightness", "2.5", "global rendering brightness"};
+cvar_t r_hdr_scenebrightness = {CVAR_SAVE, "r_hdr_scenebrightness", "2", "global rendering brightness"};
 #else
 cvar_t r_hdr_scenebrightness = {CVAR_SAVE, "r_hdr_scenebrightness", "1", "global rendering brightness"};
 #endif
