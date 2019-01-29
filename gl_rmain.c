@@ -7332,8 +7332,9 @@ void R_RenderView(void)
 
 	R_Shadow_UpdateWorldLightSelection();
 
+#ifndef __ANDROID__ // Has to be disabled to stop framebuffer being used which does not work
 	R_Bloom_StartFrame();
-
+#endif
 	// apply bloom brightness offset
 	if(r_fb.bloomtexture[0])
 		r_refdef.view.colorscale *= r_bloom_scenebrightness.value;
