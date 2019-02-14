@@ -1887,6 +1887,10 @@ static int VID_Mode(int fullscreen, int width, int height, int bpp, float refres
 		vid.sRGB2D         = vid_sRGB.integer >= 1 && vid.sRGBcapable2D;
 		vid.sRGB3D         = vid_sRGB.integer >= 1 && vid.sRGBcapable3D;
 
+#ifdef __ANDROID__ // Disable shadows which are borken!
+vid.stencil        = 0;
+#endif
+
 		switch(vid.renderpath)
 		{
 		case RENDERPATH_GL11:
