@@ -67,7 +67,7 @@ int cl_available = true;
 qboolean vid_supportrefreshrate = false;
 
 static qboolean vid_usingmouse = false;
-static qboolean vid_usingmouse_relativeworks = false; // SDL2 workaround for unimplemented RelativeMouse mode
+static qboolean vid_usingmouse_relativeworks = true; // SDL2 workaround for unimplemented RelativeMouse mode
 static qboolean vid_usinghidecursor = false;
 static qboolean vid_hasfocus = false;
 static qboolean vid_isfullscreen;
@@ -407,7 +407,7 @@ qboolean VID_ShowingKeyboard(void)
 
 void VID_SetMouse(qboolean fullscreengrab, qboolean relative, qboolean hidecursor)
 {
-#ifndef DP_MOBILETOUCH
+//#ifndef DP_MOBILETOUCH
 #ifdef MACOSX
 	if(relative)
 		if(vid_usingmouse && (vid_usingnoaccel != !!apple_mouse_noaccel.integer))
@@ -481,7 +481,7 @@ void VID_SetMouse(qboolean fullscreengrab, qboolean relative, qboolean hidecurso
 		vid_usinghidecursor = hidecursor;
 		SDL_ShowCursor( hidecursor ? SDL_DISABLE : SDL_ENABLE);
 	}
-#endif
+//#endif
 }
 
 // multitouch[10][] represents the mouse pointer
@@ -1006,6 +1006,7 @@ void IN_Move( void )
 	}
 	else
 	{
+	LOGI("vid_usingmouse = %d, vid_stick_mouse.integer = %d,vid_usingmouse_relativeworks = %d",vid_usingmouse,vid_stick_mouse.integer ,vid_usingmouse_relativeworks);
 		if (vid_usingmouse)
 		{
 			if (vid_stick_mouse.integer || !vid_usingmouse_relativeworks)
