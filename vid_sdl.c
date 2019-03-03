@@ -1006,7 +1006,7 @@ void IN_Move( void )
 	}
 	else
 	{
-	LOGI("vid_usingmouse = %d, vid_stick_mouse.integer = %d,vid_usingmouse_relativeworks = %d",vid_usingmouse,vid_stick_mouse.integer ,vid_usingmouse_relativeworks);
+	    //LOGI("vid_usingmouse = %d, vid_stick_mouse.integer = %d,vid_usingmouse_relativeworks = %d",vid_usingmouse,vid_stick_mouse.integer ,vid_usingmouse_relativeworks);
 		if (vid_usingmouse)
 		{
 			if (vid_stick_mouse.integer || !vid_usingmouse_relativeworks)
