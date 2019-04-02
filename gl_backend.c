@@ -1234,7 +1234,11 @@ void R_GetViewport(r_viewport_t *v)
 	*v = gl_viewport;
 }
 
+#ifdef __ANDROID__
+void GL_BindVBO(int bufferobject)
+#else
 static void GL_BindVBO(int bufferobject)
+#endif
 {
 	if (gl_state.vertexbufferobject != bufferobject)
 	{
@@ -1243,8 +1247,11 @@ static void GL_BindVBO(int bufferobject)
 		qglBindBufferARB(GL_ARRAY_BUFFER, bufferobject);CHECKGLERROR
 	}
 }
-
+#ifdef __ANDROID__
+void GL_BindEBO(int bufferobject)
+#else
 static void GL_BindEBO(int bufferobject)
+#endif
 {
 	if (gl_state.elementbufferobject != bufferobject)
 	{
@@ -1253,8 +1260,11 @@ static void GL_BindEBO(int bufferobject)
 		qglBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, bufferobject);CHECKGLERROR
 	}
 }
-
+#ifdef __ANDROID__
+void GL_BindUBO(int bufferobject)
+#else
 static void GL_BindUBO(int bufferobject)
+#endif
 {
 	if (gl_state.uniformbufferobject != bufferobject)
 	{

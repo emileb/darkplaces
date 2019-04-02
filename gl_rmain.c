@@ -7389,7 +7389,13 @@ void R_RenderView(void)
 	GL_ScissorTest(false);
 
 	r_refdef.view.matrix = originalmatrix;
-
+#ifdef __ANDROID__ // Touch controls clear these, so ensure internal state is still valid. Was causing crash in qcore mod
+    GL_BindVBO(0);
+    GL_BindEBO(0);
+    GL_BindUBO(0);
+    GL_DepthTest(false);
+    GL_DepthMask(false);
+#endif
 	CHECKGLERROR
 }
 
