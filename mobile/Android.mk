@@ -110,8 +110,8 @@ LOCAL_SRC_FILES += \
 
 
 LOCAL_LDLIBS := -lGLESv2 -lEGL -ldl -llog -lOpenSLES -lz
-LOCAL_STATIC_LIBRARIES := sigc libzip libpng ktx logwritter license_static freetype2-static libjpeg
-LOCAL_SHARED_LIBRARIES := touchcontrols SDL2 SDL2_mixer
+LOCAL_STATIC_LIBRARIES := sigc libzip libpng ktx logwritter  freetype2-static libjpeg
+LOCAL_SHARED_LIBRARIES := touchcontrols SDL2 SDL2_mixer core_shared
 
 include $(BUILD_SHARED_LIBRARY)
 
