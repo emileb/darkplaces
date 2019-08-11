@@ -2754,6 +2754,9 @@ static void M_Reset_Key (int key, int ascii)
 {
 	switch (key)
 	{
+#ifdef __ANDROID__
+    case K_ENTER:
+#endif
 	case 'Y':
 	case 'y':
 		Cbuf_AddText ("cvar_resettodefaults_all;exec default.cfg\n");
