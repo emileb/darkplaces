@@ -315,6 +315,7 @@ void PortableLookYaw(int mode, float yaw)
 // Movement handling
 ////
 
+
 void IN_Move_Android( void )
 {
 	if (quickCommand)
@@ -323,6 +324,9 @@ void IN_Move_Android( void )
 		quickCommand = 0;
 	}
 
+    int blockGamepad( void );
+    if( blockGamepad() )
+        return;
 
 	cl.cmd.forwardmove  += forwardmove * 400;
 	cl.cmd.sidemove  += sidemove   * 400;
