@@ -325,21 +325,26 @@ void IN_Move_Android( void )
 	}
 
     int blockGamepad( void );
-    if( blockGamepad() )
-        return;
-
-	cl.cmd.forwardmove  += forwardmove * 400;
-	cl.cmd.sidemove  += sidemove   * 400;
+    int blockMove = blockGamepad() & ANALOGUE_AXIS_FWD;
+    int blockLook = blockGamepad() & ANALOGUE_AXIS_PITCH;
 
 
-	cl.viewangles[0] -= look_pitch_mouse * 200;
-	look_pitch_mouse = 0;
-	cl.viewangles[0] += look_pitch_joy * 6 * (cl.realframetime * 1000.f / 16.f); // Presume was scaled at 60FPS
+    if( !blockMove )
+    {
+	    cl.cmd.forwardmove  += forwardmove * 400;
+	    cl.cmd.sidemove  += sidemove   * 400;
+    }
 
-	cl.viewangles[1] += look_yaw_mouse * 300;
-	look_yaw_mouse = 0;
-	cl.viewangles[1] += look_yaw_joy * 6 * (cl.realframetime * 1000.f / 16.f);
+    if( !blockLook )
+    {
+        cl.viewangles[0] -= look_pitch_mouse * 200;
+        look_pitch_mouse = 0;
+        cl.viewangles[0] += look_pitch_joy * 6 * (cl.realframetime * 1000.f / 16.f); // Presume was scaled at 60FPS
 
+        cl.viewangles[1] += look_yaw_mouse * 300;
+        look_yaw_mouse = 0;
+        cl.viewangles[1] += look_yaw_joy * 6 * (cl.realframetime * 1000.f / 16.f);
+    }
 
 	if (cl.viewangles[0] > 80)
 		cl.viewangles[0] = 80;
