@@ -527,6 +527,11 @@ static void S_SetChannelLayout (void)
 }
 
 
+#ifdef __ANDROID__
+extern int AUDIO_OVERRIDE_FREQ;
+extern int AUDIO_OVERRIDE_SAMPLES;
+#endif
+
 void S_Startup (void)
 {
 	qboolean fixed_speed, fixed_width, fixed_channels;
@@ -624,6 +629,13 @@ void S_Startup (void)
 		chosen_fmt.width = atoi (com_argv[i + 1]) / 8;
 		fixed_width = true;
 	}
+#ifdef __ANDROID__
+    if (AUDIO_OVERRIDE_FREQ != 0)
+    {
+        chosen_fmt.speed = AUDIO_OVERRIDE_FREQ;
+        fixed_speed = true;
+    }
+#endif
 
 #if 0
 	// LordHavoc: now you can with the resampler...
@@ -673,6 +685,7 @@ void S_Startup (void)
 		chosen_fmt.channels = SND_MAX_CHANNELS;
 		fixed_channels = false;
 	}
+
 
 	// create the sound buffer used for sumitting the samples to the plaform-dependent module
 	if (!simsound)
