@@ -6,7 +6,7 @@ LOCAL_MODULE := darkplaces_r12337
 
 LOCAL_DISABLE_FORMAT_STRING_CHECKS := true
 
-LOCAL_CFLAGS := -DUSE_GLES2 -fsigned-char -DDARKPLACES -DLINK_TO_LIBJPEG -DCONFIG_MENU -DCONFIG_CD -DKTX_OPENGL_ES2 -DENGINE_NAME=\"darkplaces\" -DDP_FS_BASEDIR=\"./\" -DDP_FS_USERDIR=\"./.darkplaces/\"
+LOCAL_CFLAGS := -DUSE_GLES2 -fsigned-char -DDARKPLACES -DLINK_TO_LIBJPEG -DCONFIG_MENU -DCONFIG_CD -DKTX_OPENGL_ES2 -DENGINE_NAME=\"darkplaces\" -DDP_FS_BASEDIR=\"./\" -DDP_FS_USERDIR=\"../user_files/darkplaces/\"
 LOCAL_CPPFLAGS := -fpermissive
 
 LOCAL_C_INCLUDES :=     $(SDL_INCLUDE_PATHS)  \
@@ -111,7 +111,7 @@ LOCAL_SRC_FILES += \
 
 LOCAL_LDLIBS := -lGLESv2 -lEGL -ldl -llog -lOpenSLES -lz
 LOCAL_STATIC_LIBRARIES := sigc libzip libpng ktx logwritter  freetype2-static libjpeg
-LOCAL_SHARED_LIBRARIES := touchcontrols SDL2 SDL2_mixer core_shared
+LOCAL_SHARED_LIBRARIES := touchcontrols SDL2 SDL2_mixer core_shared saffal
 
 include $(BUILD_SHARED_LIBRARY)
 
