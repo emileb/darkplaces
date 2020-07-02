@@ -2679,6 +2679,11 @@ static void M_Keys_Key (int k, int ascii)
 	int		keys[NUMKEYS];
 	char	tinystr[2];
 
+#ifdef __ANDROID__
+	if(k == K_TEXT)
+		return;
+#endif
+
 	if (bind_grab)
 	{	// defining a key
 		S_LocalSound ("sound/misc/menu1.wav");
