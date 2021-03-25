@@ -21,6 +21,7 @@ LOCAL_C_INCLUDES :=     $(SDL_INCLUDE_PATHS)  \
 LOCAL_SRC_FILES += \
     ../../Clibs_OpenTouch/quake/android_jni.cpp \
     ../../Clibs_OpenTouch/quake/touch_interface.cpp \
+    ../../Clibs_OpenTouch/touch_interface_base.cpp \
     mobile/game_interface.c \
 	bih.c \
 	crypto.c \

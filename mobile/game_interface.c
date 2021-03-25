@@ -242,11 +242,6 @@ int PortableShowKeyboard()
 		return 0;
 }
 
-void PortableAutomapControl(float zoom, float x, float y)
-{
-
-}
-
 void PortableBackButton()
 {
     LOGI("Back button");
