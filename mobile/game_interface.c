@@ -167,6 +167,14 @@ void PortableAction(int state, int action)
             if ( state )
                 PortableCommand("impulse 8\n");
             break;
+		case PORT_ACT_WEAP0:
+			if ( state )
+				PortableCommand("impulse 226\n");
+			break;
+		case PORT_ACT_WEAP9:
+			if ( state )
+				PortableCommand("impulse 225\n");
+			break;
         case PORT_ACT_NEXT_WEP:
             if (state)
                 PortableCommand("impulse 10\n");
