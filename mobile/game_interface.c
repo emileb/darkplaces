@@ -222,7 +222,9 @@ void PortableAction(int state, int action)
 static const char * quickCommand = 0;
 void PortableCommand(const char * cmd)
 {
-	quickCommand = cmd;
+	static char cmdBuffer[256];
+	dpsnprintf(cmdBuffer, 256, "%s\n", cmd);
+	quickCommand = cmdBuffer;
 }
 
 
@@ -328,7 +330,8 @@ void IN_Move_Android( void )
 {
 	if (quickCommand)
 	{
-		Cmd_ExecuteString(quickCommand,src_command,true);
+		LOGI("CMD = %s", quickCommand);
+		Cmd_ExecuteString(quickCommand, src_command, true);
 		quickCommand = 0;
 	}
 
