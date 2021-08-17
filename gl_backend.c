@@ -26,6 +26,13 @@ float gl_modelview16f[16];
 float gl_modelviewprojection16f[16];
 qbool gl_modelmatrixchanged;
 
+
+#ifdef __ANDROID__
+int android_reset_vertex = 0;
+int android_reset_color  = 0;
+int android_reset_tex    = 0;
+#endif
+
 #ifdef DEBUGGL
 int gl_errornumber = 0;
 

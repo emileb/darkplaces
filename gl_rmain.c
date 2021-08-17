@@ -1097,6 +1097,16 @@ static void R_GLSL_CompilePermutation(r_glsl_permutation_t *p, unsigned int mode
 	geomstrings_list[geomstrings_count++] = "#define GEOMETRY_SHADER\n";
 	fragstrings_list[fragstrings_count++] = "#define FRAGMENT_SHADER\n";
 
+#if USE_GLES2
+	vertstrings_list[vertstrings_count++] = "precision highp int;\n";
+	geomstrings_list[geomstrings_count++] = "precision highp int;\n";
+	fragstrings_list[fragstrings_count++] = "precision highp int;\n";
+
+	vertstrings_list[vertstrings_count++] = "precision highp float;\n";
+	geomstrings_list[geomstrings_count++] = "precision highp float;\n";
+	fragstrings_list[fragstrings_count++] = "precision highp float;\n";
+#endif
+
 	// the second pretext is the mode (for example a light source)
 	vertstrings_list[vertstrings_count++] = modeinfo->pretext;
 	geomstrings_list[geomstrings_count++] = modeinfo->pretext;
@@ -5691,8 +5701,10 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 
 	R_Shadow_UpdateWorldLightSelection();
 
+//#ifndef __ANDROID__
 	// this will set up r_fb.rt_screen
 	R_Bloom_StartFrame();
+//#endif
 
 	// apply bloom brightness offset
 	if(r_fb.rt_bloom)
