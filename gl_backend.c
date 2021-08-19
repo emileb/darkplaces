@@ -1507,7 +1507,7 @@ void GL_Clear(int mask, const float *colorvalue, float depthvalue, int stencilva
 		if (mask & GL_DEPTH_BUFFER_BIT)
 		{
 #ifdef USE_GLES2
-			//qglClearDepthf(depthvalue);CHECKGLERROR
+			qglClearDepthf(depthvalue);CHECKGLERROR
 #else
 			qglClearDepth(depthvalue);CHECKGLERROR
 #endif
