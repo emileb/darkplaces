@@ -1326,7 +1326,7 @@ void VID_Init (void)
 #endif
 #endif
 #ifdef DP_MOBILETOUCH
-	Cvar_SetValueQuick(&vid_touchscreen, 1);
+	//Cvar_SetValueQuick(&vid_touchscreen, 1);
 #endif
 	Cvar_RegisterVariable(&joy_sdl2_trigger_deadzone);
 
