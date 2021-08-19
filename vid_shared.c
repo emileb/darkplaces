@@ -781,9 +781,9 @@ void GL_Setup(void)
 	qglGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint*)&vid.maxtexturesize_2d);
 	CHECKGLERROR
 #ifdef GL_MAX_CUBE_MAP_TEXTURE_SIZE
-#ifdef USE_GLES2
-	if (GL_CheckExtension("GL_ARB_texture_cube_map", "-nocubemap", false))
-#endif
+//#ifdef USE_GLES2
+//	if (GL_CheckExtension("GL_ARB_texture_cube_map", "-nocubemap", false))
+//#endif
 	{
 		qglGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, (GLint*)&vid.maxtexturesize_cubemap);
 		Con_DPrintf("GL_MAX_CUBE_MAP_TEXTURE_SIZE = %i\n", vid.maxtexturesize_cubemap);
