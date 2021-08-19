@@ -261,6 +261,9 @@ cvar_t r_q1bsp_lightmap_updates_enabled = {CF_CLIENT | CF_ARCHIVE, "r_q1bsp_ligh
 cvar_t r_q1bsp_lightmap_updates_combine = {CF_CLIENT | CF_ARCHIVE, "r_q1bsp_lightmap_updates_combine", "2", "combine lightmap texture updates to make fewer glTexSubImage2D calls, modes: 0 = immediately upload lightmaps (may be thousands of small 3x3 updates), 1 = combine to one call, 2 = combine to one full texture update (glTexImage2D) which tells the driver it does not need to lock the resource (faster on most drivers)"};
 cvar_t r_q1bsp_lightmap_updates_hidden_surfaces = {CF_CLIENT | CF_ARCHIVE, "r_q1bsp_lightmap_updates_hidden_surfaces", "0", "update lightmaps on surfaces that are not visible, so that updates only occur on frames where lightstyles changed value (animation or light switches), only makes sense with combine = 2"};
 
+cvar_t r_disable_vbo = {CF_CLIENT, "r_disable_vbo", "1", "Disable the use of VBO (improve performance on GLES2)"};
+
+
 extern cvar_t v_glslgamma_2d;
 
 extern qbool v_flipped_state;
@@ -3440,6 +3443,9 @@ void GL_Main_Init(void)
 	Cvar_SetValueQuick(&r_farclip_world, 0);
 	Cvar_SetValueQuick(&r_useinfinitefarclip, 0);
 #endif
+
+	Cvar_RegisterVariable(&r_disable_vbo);
+
 	R_RegisterModule("GL_Main", gl_main_start, gl_main_shutdown, gl_main_newmap, NULL, NULL);
 }
 
@@ -3756,6 +3762,12 @@ r_meshbuffer_t *R_BufferData_Store(size_t datasize, const void *data, r_bufferda
 	mem = r_bufferdata_buffer[r_bufferdata_cycle][type];
 	offset = (int)mem->current;
 	mem->current += padsize;
+
+	if(r_disable_vbo.integer) // When disabled do not upload the data
+	{
+		*returnbufferoffset = 0;
+		return NULL;
+	}
 
 	// upload the data to the buffer at the chosen offset
 	if (offset == 0)

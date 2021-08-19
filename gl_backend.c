@@ -33,6 +33,8 @@ int android_reset_color  = 0;
 int android_reset_tex    = 0;
 #endif
 
+extern cvar_t r_disable_vbo;
+
 #ifdef DEBUGGL
 int gl_errornumber = 0;
 
@@ -1745,19 +1747,39 @@ void R_Mesh_Draw(int firstvertex, int numvertices, int firsttriangle, int numtri
 		case RENDERPATH_GL32:
 		case RENDERPATH_GLES2:
 			CHECKGLERROR
-			if (bufferobject3s)
+			if(r_disable_vbo.integer)
 			{
-				GL_BindEBO(bufferobject3s);
-				qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)bufferoffset3s);CHECKGLERROR
-			}
-			else if (bufferobject3i)
-			{
-				GL_BindEBO(bufferobject3i);
-				qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)bufferoffset3i);CHECKGLERROR
+				if (element3s)
+				{
+					GL_BindEBO(0);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)element3s);CHECKGLERROR
+				}
+				else if (element3i)
+				{
+					GL_BindEBO(0);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)element3i);CHECKGLERROR
+				}
+				else
+				{
+					qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				}
 			}
 			else
 			{
-				qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				if (bufferobject3s)
+				{
+					GL_BindEBO(bufferobject3s);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)bufferoffset3s);CHECKGLERROR
+				}
+				else if (bufferobject3i)
+				{
+					GL_BindEBO(bufferobject3i);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)bufferoffset3i);CHECKGLERROR
+				}
+				else
+				{
+					qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				}
 			}
 			break;
 		}
