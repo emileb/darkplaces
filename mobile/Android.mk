@@ -48,8 +48,8 @@ LOCAL_SRC_FILES += \
 	com_ents.c \
 	com_ents4.c \
 	com_game.c \
-	com_list.c \
 	com_msg.c \
+	com_infostring.c \
 	common.c \
 	console.c \
 	csprogs.c \
