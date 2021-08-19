@@ -5135,7 +5135,9 @@ static void R_Bloom_StartFrame(void)
 		}
 	}
 
-	r_fb.rt_screen = R_RenderTarget_Get(screentexturewidth, screentextureheight, TEXTYPE_DEPTHBUFFER24STENCIL8, true, textype, TEXTYPE_UNUSED, TEXTYPE_UNUSED, TEXTYPE_UNUSED);
+	//r_fb.rt_screen = R_RenderTarget_Get(screentexturewidth, screentextureheight, TEXTYPE_DEPTHBUFFER24STENCIL8, true, textype, TEXTYPE_UNUSED, TEXTYPE_UNUSED, TEXTYPE_UNUSED);
+	r_fb.rt_screen = 0;
+//EMILE
 
 	r_refdef.view.clear = true;
 }
@@ -5253,6 +5255,9 @@ static void R_Bloom_MakeTexture(void)
 
 static void R_BlendView(int viewfbo, rtexture_t *viewdepthtexture, rtexture_t *viewcolortexture, int viewx, int viewy, int viewwidth, int viewheight)
 {
+return;
+//EMILE
+
 	uint64_t permutation;
 	float uservecs[4][4];
 	rtexture_t *viewtexture;
