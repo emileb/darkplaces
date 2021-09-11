@@ -319,6 +319,11 @@ static void Host_InitSession(void)
 
 void Host_LockSession(void)
 {
+
+#ifdef __ANDROID__
+	return;
+#endif
+
 	if(locksession_run)
 		return;
 	locksession_run = true;
