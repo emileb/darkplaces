@@ -5636,6 +5636,19 @@ static void R_SortEntities(void)
 	qsort(r_refdef.scene.entities, r_refdef.scene.numentities, sizeof(*r_refdef.scene.entities), R_SortEntities_Compare);
 }
 
+#ifdef __ANDROID__
+// The touch controls will change the GL program, this resets it
+void R_ResetProgram()
+{
+    if( r_glsl_permutation != NULL && r_glsl_permutation->program)
+	{
+        qglUseProgram(r_glsl_permutation->program);CHECKGLERROR
+	    if (r_glsl_permutation->loc_ModelViewProjectionMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewProjectionMatrix, 1, false, gl_modelviewprojection16f);
+	    if (r_glsl_permutation->loc_ModelViewMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewMatrix, 1, false, gl_modelview16f);
+	    if (r_glsl_permutation->loc_ClientTime >= 0) qglUniform1f(r_glsl_permutation->loc_ClientTime, cl.time);
+	}
+}
+#endif
 /*
 ================
 R_RenderView
@@ -5776,7 +5789,7 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 
 	// for the actual view render we use scissoring a fair amount, so scissor
 	// test needs to be on
-	if (r_fb.rt_screen)
+	//if (r_fb.rt_screen)
 		GL_ScissorTest(true);
 	GL_Scissor(viewx, viewy, viewwidth, viewheight);
 	R_RenderScene(viewfbo, viewdepthtexture, viewcolortexture, viewx, viewy, viewwidth, viewheight);
@@ -5790,7 +5803,13 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 		R_TimeReport("blendview");
 
 	r_refdef.view.matrix = originalmatrix;
-
+#ifdef __ANDROID__ // Touch controls clear these, so ensure internal state is still valid. Was causing crash in qcore mod
+    GL_BindVBO(0);
+    GL_BindEBO(0);
+    GL_BindUBO(0);
+    GL_DepthTest(false);
+    GL_DepthMask(false);
+#endif
 	CHECKGLERROR
 
 	// go back to 2d rendering
@@ -5893,6 +5912,7 @@ void R_RenderScene(int viewfbo, rtexture_t *viewdepthtexture, rtexture_t *viewco
 	if (r_timereport_active)
 		R_TimeReport("preparelights");
 
+#ifndef USE_GLES2 // Disable this as shadows broken, this fixes the white sky on P20
 	// render all the shadowmaps that will be used for this view
 	shadowmapping = R_Shadow_ShadowMappingEnabled();
 	if (shadowmapping || r_shadow_shadowmapatlas_modelshadows_size)
@@ -5905,6 +5925,7 @@ void R_RenderScene(int viewfbo, rtexture_t *viewdepthtexture, rtexture_t *viewco
 	// render prepass deferred lighting if r_shadow_deferred is on, this produces light buffers that will be sampled in forward pass
 	if (r_shadow_usingdeferredprepass)
 		R_Shadow_DrawPrepass();
+#endif
 
 	// now we begin the forward pass of the view render
 	if (r_depthfirst.integer >= 1 && cl.csqc_vidvars.drawworld && r_refdef.scene.worldmodel && r_refdef.scene.worldmodel->DrawDepth)
@@ -8603,7 +8624,11 @@ void RSurf_SetupDepthAndCulling(void)
 	// submodels are biased to avoid z-fighting with world surfaces that they
 	// may be exactly overlapping (avoids z-fighting artifacts on certain
 	// doors and things in Quake maps)
+#ifdef USE_GLES2 // Something up with depth precision, need this otherwise the weapon is over the HUD
+	GL_DepthRange(0, (rsurface.texture->currentmaterialflags & MATERIALFLAG_SHORTDEPTHRANGE) ? 0.5 : 1);
+#else
 	GL_DepthRange(0, (rsurface.texture->currentmaterialflags & MATERIALFLAG_SHORTDEPTHRANGE) ? 0.0625 : 1);
+#endif
 	GL_PolygonOffset(rsurface.basepolygonfactor + rsurface.texture->biaspolygonfactor, rsurface.basepolygonoffset + rsurface.texture->biaspolygonoffset);
 	GL_DepthTest(!(rsurface.texture->currentmaterialflags & MATERIALFLAG_NODEPTHTEST));
 	GL_CullFace((rsurface.texture->currentmaterialflags & MATERIALFLAG_NOCULLFACE) ? GL_NONE : r_refdef.view.cullface_back);

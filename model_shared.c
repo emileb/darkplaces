@@ -4451,7 +4451,7 @@ void Mod_Mesh_Create(model_t *mod, const char *name)
 
 void Mod_Mesh_Destroy(model_t *mod)
 {
-	Mod_UnloadModel(mod);
+	//Mod_UnloadModel(mod);
 }
 
 // resets the mesh model to have no geometry to render, ready for a new frame -
