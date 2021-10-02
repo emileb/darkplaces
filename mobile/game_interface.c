@@ -196,10 +196,16 @@ void PortableAction(int state, int action)
                 PortableCommand("impulse 14\n");
             break;
         case PORT_ACT_QUICKSAVE:
-            PortableKeyEvent( state, SDL_SCANCODE_F6, 0);
+        	if(state) {
+				PortableKeyEvent(1, SDL_SCANCODE_F6, 0);
+				PortableKeyEvent(0, SDL_SCANCODE_F6, 0);
+			}
             break;
         case PORT_ACT_QUICKLOAD:
-            PortableKeyEvent( state, SDL_SCANCODE_F9, 0);
+        	if(state) {
+				PortableKeyEvent(1, SDL_SCANCODE_F9, 0);
+				PortableKeyEvent(0, SDL_SCANCODE_F9, 0);
+			}
             break;
         case PORT_ACT_CONSOLE:
             if (state)
