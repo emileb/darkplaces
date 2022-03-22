@@ -66,7 +66,7 @@ int cl_available = true;
 qbool vid_supportrefreshrate = false;
 
 static qbool vid_usingmouse = false;
-static qbool vid_usingmouse_relativeworks = false; // SDL2 workaround for unimplemented RelativeMouse mode
+static qbool vid_usingmouse_relativeworks = true; // SDL2 workaround for unimplemented RelativeMouse mode
 static qbool vid_usinghidecursor = false;
 static qbool vid_hasfocus = false;
 static qbool vid_isfullscreen;
@@ -370,7 +370,7 @@ qbool VID_ShowingKeyboard(void)
 
 void VID_SetMouse(qbool fullscreengrab, qbool relative, qbool hidecursor)
 {
-#ifndef DP_MOBILETOUCH
+//#ifndef DP_MOBILETOUCH
 #ifdef MACOSX
 	if(relative)
 		if(vid_usingmouse && (vid_usingnoaccel != !!apple_mouse_noaccel.integer))
@@ -440,7 +440,7 @@ void VID_SetMouse(qbool fullscreengrab, qbool relative, qbool hidecursor)
 		vid_usinghidecursor = hidecursor;
 		SDL_ShowCursor( hidecursor ? SDL_DISABLE : SDL_ENABLE);
 	}
-#endif
+//#endif
 }
 
 // multitouch[10][] represents the mouse pointer
@@ -939,6 +939,10 @@ static void IN_Move_TouchScreen_Quake(void)
 	cl.viewangles[1] -= aim[0] * cl_yawspeed.value * cl.realframetime;
 }
 
+#ifdef __ANDROID__
+void IN_Move_Android( void );
+#endif
+
 void IN_Move( void )
 {
 	static int old_x = 0, old_y = 0;
@@ -1012,7 +1016,9 @@ void IN_Move( void )
 		in_windowmouse_x = x;
 		in_windowmouse_y = y;
 	}
-
+#ifdef __ANDROID__
+    IN_Move_Android( );
+#endif
 	VID_BuildJoyState(&joystate);
 	VID_ApplyJoyState(&joystate);
 }
@@ -1595,6 +1601,9 @@ static qbool VID_InitModeGL(viddef_mode_t *mode)
 	vid_usingvsync = (vid_vsync.integer != 0);
 
 	gl_platform = "SDL";
+#ifdef __ANDROID__
+	SDL_GL_SetSwapInterval(1);
+#endif
 
 	GL_Setup();
 

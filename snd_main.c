@@ -472,6 +472,11 @@ static void S_SetChannelLayout (void)
 }
 
 
+#ifdef __ANDROID__
+extern int AUDIO_OVERRIDE_FREQ;
+extern int AUDIO_OVERRIDE_SAMPLES;
+#endif
+
 void S_Startup (void)
 {
 	snd_format_t chosen_fmt;
@@ -556,6 +561,12 @@ void S_Startup (void)
 	{
 		chosen_fmt.width = atoi (sys.argv[i + 1]) / 8;
 	}
+#ifdef __ANDROID__
+    if (AUDIO_OVERRIDE_FREQ != 0)
+    {
+        chosen_fmt.speed = AUDIO_OVERRIDE_FREQ;
+    }
+#endif
 
 #if 0
 	// LadyHavoc: now you can with the resampler...

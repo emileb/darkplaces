@@ -63,7 +63,7 @@ void PortableAction(int state, int action)
 {
 	LOGI("PortableAction %d %d",state, action);
 
-	if ((action >= PORT_ACT_CUSTOM_0) && (action <= PORT_ACT_CUSTOM_15))
+	if ((action >= PORT_ACT_CUSTOM_0) && (action <= PORT_ACT_CUSTOM_17))
     {
         PortableKeyEvent(state, SDL_SCANCODE_H + action - PORT_ACT_CUSTOM_0, 0);
     }
@@ -169,6 +169,14 @@ void PortableAction(int state, int action)
             if ( state )
                 PortableCommand("impulse 8\n");
             break;
+		case PORT_ACT_WEAP0:
+			if ( state )
+				PortableCommand("impulse 226\n");
+			break;
+		case PORT_ACT_WEAP9:
+			if ( state )
+				PortableCommand("impulse 225\n");
+			break;
         case PORT_ACT_NEXT_WEP:
             if (state)
                 PortableCommand("impulse 10\n");
@@ -190,10 +198,16 @@ void PortableAction(int state, int action)
                 PortableCommand("impulse 14\n");
             break;
         case PORT_ACT_QUICKSAVE:
-            PortableKeyEvent( state, SDL_SCANCODE_F6, 0);
+        	if(state) {
+				PortableKeyEvent(1, SDL_SCANCODE_F6, 0);
+				PortableKeyEvent(0, SDL_SCANCODE_F6, 0);
+			}
             break;
         case PORT_ACT_QUICKLOAD:
-            PortableKeyEvent( state, SDL_SCANCODE_F9, 0);
+        	if(state) {
+				PortableKeyEvent(1, SDL_SCANCODE_F9, 0);
+				PortableKeyEvent(0, SDL_SCANCODE_F9, 0);
+			}
             break;
         case PORT_ACT_CONSOLE:
             if (state)
@@ -216,7 +230,9 @@ void PortableAction(int state, int action)
 static const char * quickCommand = 0;
 void PortableCommand(const char * cmd)
 {
-	quickCommand = cmd;
+	static char cmdBuffer[256];
+	dpsnprintf(cmdBuffer, 256, "%s\n", cmd);
+	quickCommand = cmdBuffer;
 }
 
 

@@ -806,8 +806,9 @@ void R_Textures_Frame (void)
 						oldbindtexnum = R_Mesh_TexBound(0, gltexturetypeenums[glt->texturetype]);
 
 						qglBindTexture(gltexturetypeenums[glt->texturetype], glt->texnum);CHECKGLERROR
+#ifndef __ANDROID__
 						qglTexParameteri(gltexturetypeenums[glt->texturetype], GL_TEXTURE_MAX_ANISOTROPY_EXT, old_aniso);CHECKGLERROR
-
+#endif
 						qglBindTexture(gltexturetypeenums[glt->texturetype], oldbindtexnum);CHECKGLERROR
 					}
 				}
@@ -971,8 +972,11 @@ static void R_UploadFullTexture(gltexture_t *glt, const unsigned char *data)
 
 	// error out if a stretch is needed on special texture types
 	if (glt->texturetype != GLTEXTURETYPE_2D && (glt->tilewidth != glt->inputwidth || glt->tileheight != glt->inputheight || glt->tiledepth != glt->inputdepth))
+#ifdef __ANDROID__ // 3D textures not in GLES2, but carry on anyway
+		return;
+#else
 		Sys_Error("R_UploadFullTexture \"%s\": stretch uploads allowed only on 2D textures\n", glt->identifier);
-
+#endif
 	// when picmip or maxsize is applied, we scale up to a power of 2 multiple
 	// of the target size and then use the mipmap reduction function to get
 	// high quality supersampled results
