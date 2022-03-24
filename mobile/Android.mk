@@ -6,7 +6,7 @@ LOCAL_MODULE := darkplaces_xonotic
 
 LOCAL_DISABLE_FORMAT_STRING_CHECKS := true
 
-LOCAL_CFLAGS := -DUSE_GLES2 -fsigned-char -DDARKPLACES -DLINK_TO_LIBJPEG -DCONFIG_MENU -DCONFIG_CD -DKTX_OPENGL_ES2 -DENGINE_NAME=\"darkplaces\" -DDP_FS_BASEDIR=\"./\" -DDP_FS_USERDIR=\"../user_files/darkplaces_xonotic/\"
+LOCAL_CFLAGS := -g -O0 -DUSE_GLES2 -fsigned-char -DDARKPLACES -DLINK_TO_LIBJPEG -DCONFIG_MENU -DCONFIG_CD -DKTX_OPENGL_ES2 -DENGINE_NAME=\"darkplaces\" -DDP_FS_BASEDIR=\"./\" -DDP_FS_USERDIR=\"../user_files/darkplaces_xonotic/\"
 LOCAL_CPPFLAGS := -fpermissive
 
 LOCAL_C_INCLUDES :=     $(SDL_INCLUDE_PATHS)  \
@@ -23,6 +23,7 @@ LOCAL_SRC_FILES += \
     ../../Clibs_OpenTouch/quake/touch_interface.cpp \
     ../../Clibs_OpenTouch/touch_interface_base.cpp \
     mobile/game_interface.c \
+    mobile/dds.c \
 	bih.c \
 	crypto.c \
 	cd_shared.c \
