@@ -1588,7 +1588,9 @@ static qbool VID_InitModeGL(viddef_mode_t *mode)
 		VID_Shutdown();
 		return false;
 	}
+#ifndef __ANDROID__ // Don't do this, keep the screen size passed in through the cmd line
 	SDL_GetWindowSize(window, &mode->width, &mode->height);
+#endif
 	context = SDL_GL_CreateContext(window);
 	if (context == NULL)
 	{
