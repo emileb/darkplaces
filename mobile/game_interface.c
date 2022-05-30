@@ -339,7 +339,7 @@ void IN_Move_Android( void )
 {
 	if (quickCommand)
 	{
-		Cmd_ExecuteString(&cmd_local, quickCommand, src_local, true);
+        Cbuf_AddText(cmd_local, quickCommand);
 		quickCommand = 0;
 	}
 
