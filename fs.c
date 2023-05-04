@@ -2055,6 +2055,11 @@ static void FS_Init_Dir (void)
 	if((i = Sys_CheckParm("-cddir")) && i < sys.argc - 1)
 		dpsnprintf(fs_cddir, sizeof(fs_cddir), "%s/", sys.argv[i+1]);
 #endif
+
+#ifdef __ANDROID__
+	extern const char *userFilesPath_c;
+	dpsnprintf(fs_userdir, sizeof(fs_userdir), "%s/darkplaces_xonotic/", userFilesPath_c);
+#else
 	// Add the personal game directory
 	if((i = Sys_CheckParm("-userdir")) && i < sys.argc - 1)
 		dpsnprintf(fs_userdir, sizeof(fs_userdir), "%s/", sys.argv[i+1]);
@@ -2107,7 +2112,7 @@ static void FS_Init_Dir (void)
 		Con_DPrintf("userdir %i is the winner\n", dirmode);
 #endif
 	}
-
+#endif
 	// if userdir equal to basedir, clear it to avoid confusion later
 	if (!strcmp(fs_basedir, fs_userdir))
 		fs_userdir[0] = 0;
