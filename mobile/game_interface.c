@@ -25,10 +25,9 @@ void PortableInit(int argc,const char ** argv)
 	Memory_Init();
 
 	Host_Main();
+
+    Sys_Quit(0);
 }
-
-
-//extern void Android_OnMouse( int androidButton, int action, float x, float y);
 
 
 extern int SDL_SendKeyboardKey(Uint8 state, SDL_Scancode scancode);
@@ -347,11 +346,20 @@ void IN_Move_Android( void )
     int blockMove = blockGamepad() & ANALOGUE_AXIS_FWD;
     int blockLook = blockGamepad() & ANALOGUE_AXIS_PITCH;
 
+    int fwdSpeed = 400;
+    int sideSpeed = 400;
+
+    int isPlayerRunning();
+    if(!isPlayerRunning())
+    {
+        fwdSpeed = fwdSpeed / 2;
+        sideSpeed = sideSpeed /2;
+    }
 
     if( !blockMove )
     {
-	    cl.cmd.forwardmove  += forwardmove * 400;
-	    cl.cmd.sidemove  += sidemove   * 400;
+	    cl.cmd.forwardmove  += forwardmove * fwdSpeed;
+	    cl.cmd.sidemove  += sidemove   * sideSpeed;
     }
 
     if( !blockLook )
