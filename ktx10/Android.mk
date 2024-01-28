@@ -25,10 +25,6 @@ LOCAL_SRC_FILES := \
 	lib/writer.c \
 	lib/writer_v1.c
 
-
-
-LOCAL_LDLIBS := -lGLESv2 -lEGL -ldl
-
 include $(BUILD_STATIC_LIBRARY)
 
 
