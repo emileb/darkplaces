@@ -30,6 +30,15 @@ float gl_modelview16f[16];
 float gl_modelviewprojection16f[16];
 qbool gl_modelmatrixchanged;
 
+
+#ifdef __ANDROID__
+int android_reset_vertex = 0;
+int android_reset_color  = 0;
+int android_reset_tex    = 0;
+#endif
+
+extern cvar_t r_disable_vbo;
+
 #ifdef DEBUGGL
 void GL_PrintError(GLenum errornumber, const char *filename, unsigned int linenumber)
 {
@@ -77,6 +86,7 @@ void GL_PrintError(GLenum errornumber, const char *filename, unsigned int linenu
 }
 #endif // DEBUGGL
 
+#ifndef USE_GLES2
 static void GLAPIENTRY GL_DebugOutputCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam)
 {
 	const char *sev = "ENUM?", *typ = "ENUM?", *src = "ENUM?", *col = "";
@@ -106,6 +116,7 @@ static void GLAPIENTRY GL_DebugOutputCallback(GLenum source, GLenum type, GLuint
 	}
 	Con_Printf("gl_debug: %s%s %s %s: %u: %s\n", col, sev, typ, src, (unsigned int)id, message);
 }
+#endif
 
 #define BACKENDACTIVECHECK if (!gl_state.active) Sys_Error("GL backend function called when backend is not active");
 
@@ -272,6 +283,9 @@ static void gl_backend_start(void)
 		// fetch current fbo here (default fbo is not 0 on some GLES devices)
 		CHECKGLERROR
 		qglGetIntegerv(GL_FRAMEBUFFER_BINDING, &gl_state.defaultframebufferobject);CHECKGLERROR
+#ifdef __ANDROID__
+		gl_state.defaultframebufferobject = 0;
+#endif
 		break;
 	}
 
@@ -896,6 +910,9 @@ void R_Viewport_InitRectSideView(r_viewport_t *v, const matrix4x4_t *cameramatri
 
 void R_SetViewport(const r_viewport_t *v)
 {
+#ifdef __ANDROID__
+    R_ResetProgram();
+#endif
 	gl_viewport = *v;
 
 	// FIXME: v_flipped_state is evil, this probably breaks somewhere
@@ -924,7 +941,11 @@ void R_GetViewport(r_viewport_t *v)
 	*v = gl_viewport;
 }
 
+#ifdef __ANDROID__
+void GL_BindVBO(int bufferobject)
+#else
 static void GL_BindVBO(int bufferobject)
+#endif
 {
 	if (gl_state.vertexbufferobject != bufferobject)
 	{
@@ -933,8 +954,11 @@ static void GL_BindVBO(int bufferobject)
 		qglBindBuffer(GL_ARRAY_BUFFER, bufferobject);CHECKGLERROR
 	}
 }
-
+#ifdef __ANDROID__
+void GL_BindEBO(int bufferobject)
+#else
 static void GL_BindEBO(int bufferobject)
+#endif
 {
 	if (gl_state.elementbufferobject != bufferobject)
 	{
@@ -943,8 +967,11 @@ static void GL_BindEBO(int bufferobject)
 		qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferobject);CHECKGLERROR
 	}
 }
-
+#ifdef __ANDROID__
+void GL_BindUBO(int bufferobject)
+#else
 static void GL_BindUBO(int bufferobject)
+#endif
 {
 	if (gl_state.uniformbufferobject != bufferobject)
 	{
@@ -1058,6 +1085,9 @@ void R_Mesh_DestroyFramebufferObject(int fbo)
 
 void R_Mesh_SetRenderTargets(int fbo)
 {
+#ifdef USE_GLES2
+    return;
+#endif
 	// set up framebuffer object or render targets for the active rendering API
 	switch (vid.renderpath)
 	{
@@ -1096,6 +1126,7 @@ static void GL_Backend_ResetState(void)
 	{
 	case RENDERPATH_GL32:
 	case RENDERPATH_GLES2:
+#ifndef USE_GLES2
 		// set up debug output early
 		if (gl_debug.integer > 0 && vid.support.arb_debug_output)
 		{
@@ -1116,6 +1147,7 @@ static void GL_Backend_ResetState(void)
 				qglDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unused, GL_FALSE);
 			qglDebugMessageCallbackARB(GL_DebugOutputCallback, NULL);
 		}
+#endif
 		CHECKGLERROR
 		qglColorMask(1, 1, 1, 1);CHECKGLERROR
 		qglBlendFunc(gl_state.blendfunc1, gl_state.blendfunc2);CHECKGLERROR
@@ -1492,7 +1524,7 @@ void GL_Clear(int mask, const float *colorvalue, float depthvalue, int stencilva
 		if (mask & GL_DEPTH_BUFFER_BIT)
 		{
 #ifdef USE_GLES2
-			//qglClearDepthf(depthvalue);CHECKGLERROR
+			qglClearDepthf(depthvalue);CHECKGLERROR
 #else
 			qglClearDepth(depthvalue);CHECKGLERROR
 #endif
@@ -1512,7 +1544,9 @@ void GL_ReadPixelsBGRA(int x, int y, int width, int height, unsigned char *outpi
 	{
 	case RENDERPATH_GL32:
 		CHECKGLERROR
+#ifndef USE_GLES2
 		qglReadPixels(x, y, width, height, GL_BGRA, GL_UNSIGNED_BYTE, outpixels);CHECKGLERROR
+#endif
 		break;
 	case RENDERPATH_GLES2: // glReadPixels() lacks GL_BGRA support (even in ES 3.2)
 		CHECKGLERROR
@@ -1834,19 +1868,39 @@ void R_Mesh_Draw(int firstvertex, int numvertices, int firsttriangle, int numtri
 		case RENDERPATH_GL32:
 		case RENDERPATH_GLES2:
 			CHECKGLERROR
-			if (bufferobject3s)
+			if(r_disable_vbo.integer)
 			{
-				GL_BindEBO(bufferobject3s);
-				qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)bufferoffset3s);CHECKGLERROR
-			}
-			else if (bufferobject3i)
-			{
-				GL_BindEBO(bufferobject3i);
-				qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)bufferoffset3i);CHECKGLERROR
+				if (element3s)
+				{
+					GL_BindEBO(0);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)element3s);CHECKGLERROR
+				}
+				else if (element3i)
+				{
+					GL_BindEBO(0);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)element3i);CHECKGLERROR
+				}
+				else
+				{
+					qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				}
 			}
 			else
 			{
-				qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				if (bufferobject3s)
+				{
+					GL_BindEBO(bufferobject3s);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_SHORT, (void *)bufferoffset3s);CHECKGLERROR
+				}
+				else if (bufferobject3i)
+				{
+					GL_BindEBO(bufferobject3i);
+					qglDrawElements(GL_TRIANGLES, numelements, GL_UNSIGNED_INT, (void *)bufferoffset3i);CHECKGLERROR
+				}
+				else
+				{
+					qglDrawArrays(GL_TRIANGLES, firstvertex, numvertices);CHECKGLERROR
+				}
 			}
 			break;
 		}
@@ -2003,8 +2057,9 @@ void R_Mesh_VertexPointer(int components, int gltype, size_t stride, const void 
 	{
 	case RENDERPATH_GL32:
 	case RENDERPATH_GLES2:
-		if (gl_state.pointer_vertex_components != components || gl_state.pointer_vertex_gltype != gltype || gl_state.pointer_vertex_stride != stride || gl_state.pointer_vertex_pointer != pointer || gl_state.pointer_vertex_vertexbuffer != vertexbuffer || gl_state.pointer_vertex_offset != bufferoffset)
+		if (android_reset_vertex || gl_state.pointer_vertex_components != components || gl_state.pointer_vertex_gltype != gltype || gl_state.pointer_vertex_stride != stride || gl_state.pointer_vertex_pointer != pointer || gl_state.pointer_vertex_vertexbuffer != vertexbuffer || gl_state.pointer_vertex_offset != bufferoffset)
 		{
+		    android_reset_vertex = 0;
 			int bufferobject = vertexbuffer ? vertexbuffer->bufferobject : 0;
 			if (!bufferobject && gl_paranoid.integer)
 				Con_DPrintf(CON_WARN "Warning: no bufferobject in R_Mesh_VertexPointer(%i, %i, %i, %p, %p, %08x)", components, gltype, (int)stride, pointer, (void *)vertexbuffer, (unsigned int)bufferoffset);
@@ -2042,8 +2097,9 @@ void R_Mesh_ColorPointer(int components, int gltype, size_t stride, const void *
 				CHECKGLERROR
 				qglEnableVertexAttribArray(GLSLATTRIB_COLOR);CHECKGLERROR
 			}
-			if (gl_state.pointer_color_components != components || gl_state.pointer_color_gltype != gltype || gl_state.pointer_color_stride != stride || gl_state.pointer_color_pointer != pointer || gl_state.pointer_color_vertexbuffer != vertexbuffer || gl_state.pointer_color_offset != bufferoffset)
+			if (android_reset_color || gl_state.pointer_color_components != components || gl_state.pointer_color_gltype != gltype || gl_state.pointer_color_stride != stride || gl_state.pointer_color_pointer != pointer || gl_state.pointer_color_vertexbuffer != vertexbuffer || gl_state.pointer_color_offset != bufferoffset)
 			{
+			    android_reset_color = 0;
 				gl_state.pointer_color_components = components;
 				gl_state.pointer_color_gltype = gltype;
 				gl_state.pointer_color_stride = stride;
@@ -2095,8 +2151,9 @@ void R_Mesh_TexCoordPointer(unsigned int unitnum, int components, int gltype, si
 				qglEnableVertexAttribArray(unitnum+GLSLATTRIB_TEXCOORD0);CHECKGLERROR
 			}
 			// texcoord array
-			if (unit->pointer_texcoord_components != components || unit->pointer_texcoord_gltype != gltype || unit->pointer_texcoord_stride != stride || unit->pointer_texcoord_pointer != pointer || unit->pointer_texcoord_vertexbuffer != vertexbuffer || unit->pointer_texcoord_offset != bufferoffset)
+			if (android_reset_tex || unit->pointer_texcoord_components != components || unit->pointer_texcoord_gltype != gltype || unit->pointer_texcoord_stride != stride || unit->pointer_texcoord_pointer != pointer || unit->pointer_texcoord_vertexbuffer != vertexbuffer || unit->pointer_texcoord_offset != bufferoffset)
 			{
+			    android_reset_tex = 0;
 				unit->pointer_texcoord_components = components;
 				unit->pointer_texcoord_gltype = gltype;
 				unit->pointer_texcoord_stride = stride;

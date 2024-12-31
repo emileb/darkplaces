@@ -24,6 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "jpeg.h"
 #include "image_png.h"
 
+#ifdef __ANDROID__
+#include "mobile/dds.h"
+#endif
+
 cvar_t gl_max_size = {CF_CLIENT | CF_ARCHIVE, "gl_max_size", "2048", "maximum allowed texture size, can be used to reduce video memory usage, limited by hardware capabilities (typically 2048, 4096, or 8192)"};
 cvar_t gl_max_lightmapsize = {CF_CLIENT | CF_ARCHIVE, "gl_max_lightmapsize", "512", "maximum allowed texture size for lightmap textures, use larger values to improve rendering speed, as long as there is enough video memory available (setting it too high for the hardware will cause very bad performance)"};
 cvar_t gl_picmip = {CF_CLIENT | CF_ARCHIVE, "gl_picmip", "0", "reduces resolution of textures by powers of 2, for example 1 will halve width/height, reducing texture memory usage by 75%"};
@@ -806,8 +810,9 @@ void R_Textures_Frame (void)
 						oldbindtexnum = R_Mesh_TexBound(0, gltexturetypeenums[glt->texturetype]);
 
 						qglBindTexture(gltexturetypeenums[glt->texturetype], glt->texnum);CHECKGLERROR
+#ifndef __ANDROID__
 						qglTexParameteri(gltexturetypeenums[glt->texturetype], GL_TEXTURE_MAX_ANISOTROPY_EXT, old_aniso);CHECKGLERROR
-
+#endif
 						qglBindTexture(gltexturetypeenums[glt->texturetype], oldbindtexnum);CHECKGLERROR
 					}
 				}
@@ -971,8 +976,11 @@ static void R_UploadFullTexture(gltexture_t *glt, const unsigned char *data)
 
 	// error out if a stretch is needed on special texture types
 	if (glt->texturetype != GLTEXTURETYPE_2D && (glt->tilewidth != glt->inputwidth || glt->tileheight != glt->inputheight || glt->tiledepth != glt->inputdepth))
+#ifdef USE_GLES2 // 3D textures not in GLES2, but carry on anyway
+		return;
+#else
 		Sys_Error("R_UploadFullTexture \"%s\": stretch uploads allowed only on 2D textures\n", glt->identifier);
-
+#endif
 	// when picmip or maxsize is applied, we scale up to a power of 2 multiple
 	// of the target size and then use the mipmap reduction function to get
 	// high quality supersampled results
@@ -1605,6 +1613,100 @@ rtexture_t *R_LoadTextureDDSFile(rtexturepool_t *rtexturepool, const char *filen
 		return NULL;
 	}
 
+#if 0
+	LOGI("Loading DDS: %s", filename);
+	dds = FS_LoadFile(filename, tempmempool, true, &ddsfilesize);
+	if(dds && ddsfilesize)
+	{
+		LOGI("DDS found, size = %d", ddsfilesize);
+		dds_image_t image = dds_load_from_memory(dds, ddsfilesize);
+
+		Mem_Free(dds);
+
+		if(image)
+		{
+			LOGI("EXISTS: %d  %d",image->header.width, image->header.height);
+
+			glt = (gltexture_t *)Mem_ExpandableArray_AllocRecord(&texturearray);
+
+			// texture uploading can take a while, so make sure we're sending keepalives
+			CL_KeepaliveMessage(false);
+
+			// create the texture object
+			CHECKGLERROR
+			GL_ActiveTexture(0);
+			oldbindtexnum = R_Mesh_TexBound(0, gltexturetypeenums[GLTEXTURETYPE_2D]);
+			qglGenTextures(1, (GLuint *)&glt->texnum);CHECKGLERROR
+			qglBindTexture(gltexturetypeenums[GLTEXTURETYPE_2D], glt->texnum);CHECKGLERROR
+
+			// upload the texture
+			// we need to restore the texture binding after finishing the upload
+
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->header.width, image->header.height, 0,GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+/*
+			// FIXME: delete texture if we fail here
+			if (target != GL_TEXTURE_2D)
+			{
+				qglBindTexture(gltexturetypeenums[glt->texturetype], oldbindtexnum);CHECKGLERROR
+				Mem_Free(dds);
+				Con_DPrintf("%s target != GL_TEXTURE_2D, target == %x\n", vabuf, target);
+				return NULL; // FIXME: delete the texture from memory
+			}
+*/
+
+			// return whether this texture is transparent
+			if (hasalphaflag)
+				*hasalphaflag = (flags & TEXF_ALPHA) != 0;
+
+			// TODO: apply gl_picmip
+			// TODO: avgcolor
+			// TODO: srgb
+			// TODO: only load mipmaps if requested
+
+			//if (isMipmapped)
+			//	flags |= TEXF_MIPMAP;
+			//else
+			//	flags &= ~TEXF_MIPMAP;
+			flags &= ~TEXF_MIPMAP;
+			textype = TEXTYPE_RGBA;
+			texinfo = R_GetTexTypeInfo(textype, flags);
+
+			strlcpy (glt->identifier, vabuf, sizeof(glt->identifier));
+			glt->pool = pool;
+			glt->chain = pool->gltchain;
+			pool->gltchain = glt;
+			glt->inputwidth = image->header.width;
+			glt->inputheight = image->header.height;
+			glt->inputdepth = 1;
+			glt->flags = flags;
+			glt->textype = texinfo;
+			glt->texturetype = GLTEXTURETYPE_2D;
+			glt->inputdatasize = ddsfilesize;
+			glt->glinternalformat = GL_RGBA;
+			glt->glformat = GL_RGBA;
+			glt->gltype = GL_UNSIGNED_BYTE;
+			glt->bytesperpixel = 4;
+			glt->sides = 1;
+			glt->gltexturetypeenum = gltexturetypeenums[glt->texturetype];
+			glt->tilewidth = image->header.width;
+			glt->tileheight = image->header.height;
+			glt->tiledepth = 1;
+			glt->miplevels = 0; // FIXME
+
+			GL_SetupTextureParameters(glt->flags, glt->textype->textype, glt->texturetype);
+
+			qglBindTexture(gltexturetypeenums[glt->texturetype], oldbindtexnum);CHECKGLERROR
+
+			dds_image_free(image);
+
+			return (rtexture_t *)glt;
+		}
+	}
+	else
+		LOGI("NOT");
+
+#endif
 	// some textures are specified with extensions, so it becomes .tga.dds
 	FS_StripExtension (filename, vabuf2, sizeof(vabuf2));
 	FS_StripExtension (vabuf2, vabuf, sizeof(vabuf));

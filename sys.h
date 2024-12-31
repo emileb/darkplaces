@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define DP_OS_NAME		"Android"
 # define DP_OS_STR		"android"
 # define USE_GLES2		1
-# define USE_RWOPS		1
+# define USE_RWOPS		0
 # define LINK_TO_ZLIB	1
 # define LINK_TO_LIBVORBIS 1
 #ifdef USEXMP

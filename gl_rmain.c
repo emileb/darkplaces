@@ -214,8 +214,11 @@ cvar_t r_bloom_resolution = {CF_CLIENT | CF_ARCHIVE, "r_bloom_resolution", "320"
 cvar_t r_bloom_colorexponent = {CF_CLIENT | CF_ARCHIVE, "r_bloom_colorexponent", "1", "how exaggerated the glow is"};
 cvar_t r_bloom_colorsubtract = {CF_CLIENT | CF_ARCHIVE, "r_bloom_colorsubtract", "0.1", "reduces bloom colors by a certain amount"};
 cvar_t r_bloom_scenebrightness = {CF_CLIENT | CF_ARCHIVE, "r_bloom_scenebrightness", "1", "global rendering brightness when bloom is enabled"};
-
+#ifdef __ANDROID__
+cvar_t r_hdr_scenebrightness = {CF_CLIENT | CF_ARCHIVE, "r_hdr_scenebrightness", "2", "global rendering brightness"};
+#else
 cvar_t r_hdr_scenebrightness = {CF_CLIENT | CF_ARCHIVE, "r_hdr_scenebrightness", "1", "global rendering brightness"};
+#endif
 cvar_t r_hdr_glowintensity = {CF_CLIENT | CF_ARCHIVE, "r_hdr_glowintensity", "1", "how bright light emitting textures should appear"};
 cvar_t r_hdr_irisadaptation = {CF_CLIENT | CF_ARCHIVE, "r_hdr_irisadaptation", "0", "adjust scene brightness according to light intensity at player location"};
 cvar_t r_hdr_irisadaptation_multiplier = {CF_CLIENT | CF_ARCHIVE, "r_hdr_irisadaptation_multiplier", "2", "brightness at which value will be 1.0"};
@@ -257,6 +260,9 @@ cvar_t r_buffermegs[R_BUFFERDATA_COUNT] =
 cvar_t r_q1bsp_lightmap_updates_enabled = {CF_CLIENT, "r_q1bsp_lightmap_updates_enabled", "1", "allow lightmaps to be updated on Q1BSP maps (don't turn this off except for debugging)"};
 cvar_t r_q1bsp_lightmap_updates_combine = {CF_CLIENT | CF_ARCHIVE, "r_q1bsp_lightmap_updates_combine", "2", "combine lightmap texture updates to make fewer glTexSubImage2D calls, modes: 0 = immediately upload lightmaps (may be thousands of small 3x3 updates), 1 = combine to one call, 2 = combine to one full texture update (glTexImage2D) which tells the driver it does not need to lock the resource (faster on most drivers)"};
 cvar_t r_q1bsp_lightmap_updates_hidden_surfaces = {CF_CLIENT | CF_ARCHIVE, "r_q1bsp_lightmap_updates_hidden_surfaces", "0", "update lightmaps on surfaces that are not visible, so that updates only occur on frames where lightstyles changed value (animation or light switches), only makes sense with combine = 2"};
+
+cvar_t r_disable_vbo = {CF_CLIENT, "r_disable_vbo", "1", "Disable the use of VBO (improve performance on GLES2)"};
+
 
 extern cvar_t v_glslgamma_2d;
 
@@ -1093,6 +1099,16 @@ static void R_GLSL_CompilePermutation(r_glsl_permutation_t *p, unsigned int mode
 	vertstrings_list[vertstrings_count++] = "#define VERTEX_SHADER\n";
 	geomstrings_list[geomstrings_count++] = "#define GEOMETRY_SHADER\n";
 	fragstrings_list[fragstrings_count++] = "#define FRAGMENT_SHADER\n";
+
+#if USE_GLES2
+	vertstrings_list[vertstrings_count++] = "precision highp int;\n";
+	geomstrings_list[geomstrings_count++] = "precision highp int;\n";
+	fragstrings_list[fragstrings_count++] = "precision highp int;\n";
+
+	vertstrings_list[vertstrings_count++] = "precision highp float;\n";
+	geomstrings_list[geomstrings_count++] = "precision highp float;\n";
+	fragstrings_list[fragstrings_count++] = "precision highp float;\n";
+#endif
 
 	// the second pretext is the mode (for example a light source)
 	vertstrings_list[vertstrings_count++] = modeinfo->pretext;
@@ -3414,6 +3430,10 @@ void GL_Main_Init(void)
 	Cvar_SetValueQuick(&r_farclip_world, 0);
 	Cvar_SetValueQuick(&r_useinfinitefarclip, 0);
 #endif
+
+#ifdef USE_GLES2
+	Cvar_RegisterVariable(&r_disable_vbo);
+#endif
 	R_RegisterModule("GL_Main", gl_main_start, gl_main_shutdown, gl_main_newmap, NULL, NULL);
 }
 
@@ -3730,7 +3750,13 @@ r_meshbuffer_t *R_BufferData_Store(size_t datasize, const void *data, r_bufferda
 	mem = r_bufferdata_buffer[r_bufferdata_cycle][type];
 	offset = (int)mem->current;
 	mem->current += padsize;
-
+#ifdef USE_GLES2
+	if(r_disable_vbo.integer) // When disabled do not upload the data
+	{
+		*returnbufferoffset = 0;
+		return NULL;
+	}
+#endif
 	// upload the data to the buffer at the chosen offset
 	if (offset == 0)
 		R_Mesh_UpdateMeshBuffer(mem->buffer, NULL, mem->size, false, 0);
@@ -5105,7 +5131,12 @@ static void R_Bloom_StartFrame(void)
 		}
 	}
 
+#ifdef USE_GLES2
+	r_fb.rt_screen = 0;
+#else
 	r_fb.rt_screen = R_RenderTarget_Get(screentexturewidth, screentextureheight, TEXTYPE_DEPTHBUFFER24STENCIL8, true, textype, TEXTYPE_UNUSED, TEXTYPE_UNUSED, TEXTYPE_UNUSED);
+#endif
+
 
 	r_refdef.view.clear = true;
 }
@@ -5626,6 +5657,19 @@ static void R_SortEntities(void)
 	qsort(r_refdef.scene.entities, r_refdef.scene.numentities, sizeof(*r_refdef.scene.entities), R_SortEntities_Compare);
 }
 
+#ifdef __ANDROID__
+// The touch controls will change the GL program, this resets it
+void R_ResetProgram()
+{
+    if( r_glsl_permutation != NULL && r_glsl_permutation->program)
+	{
+        qglUseProgram(r_glsl_permutation->program);CHECKGLERROR
+	    if (r_glsl_permutation->loc_ModelViewProjectionMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewProjectionMatrix, 1, false, gl_modelviewprojection16f);
+	    if (r_glsl_permutation->loc_ModelViewMatrix >= 0) qglUniformMatrix4fv(r_glsl_permutation->loc_ModelViewMatrix, 1, false, gl_modelview16f);
+	    if (r_glsl_permutation->loc_ClientTime >= 0) qglUniform1f(r_glsl_permutation->loc_ClientTime, cl.time);
+	}
+}
+#endif
 /*
 ================
 R_RenderView
@@ -5716,7 +5760,11 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 	if(r_fb.rt_bloom)
 		r_refdef.view.colorscale *= r_bloom_scenebrightness.value;
 
+#ifdef USE_GLES2
+    skipblend = true;
+#else
 	skipblend = R_BlendView_IsTrivial(r_fb.rt_screen->texturewidth, r_fb.rt_screen->textureheight, width, height);
+#endif
 	if (skipblend)
 	{
 		// Render to the screen right away.
@@ -5777,7 +5825,9 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 
 	// for the actual view render we use scissoring a fair amount, so scissor
 	// test needs to be on
+#ifndef USE_GLES2
 	if (r_fb.rt_screen)
+#endif
 		GL_ScissorTest(true);
 	GL_Scissor(r_refdef.view.viewport.x, r_refdef.view.viewport.y, r_refdef.view.viewport.width, r_refdef.view.viewport.height);
 	R_RenderScene(viewfbo, viewdepthtexture, viewcolortexture, viewx, viewy, viewwidth, viewheight);
@@ -5793,7 +5843,13 @@ void R_RenderView(int fbo, rtexture_t *depthtexture, rtexture_t *colortexture, i
 		R_TimeReport("blendview");
 
 	r_refdef.view.matrix = originalmatrix;
-
+#ifdef __ANDROID__ // Touch controls clear these, so ensure internal state is still valid. Was causing crash in qcore mod
+    GL_BindVBO(0);
+    GL_BindEBO(0);
+    GL_BindUBO(0);
+    GL_DepthTest(false);
+    GL_DepthMask(false);
+#endif
 	CHECKGLERROR
 
 	// go back to 2d rendering
@@ -5884,6 +5940,7 @@ void R_RenderScene(int viewfbo, rtexture_t *viewdepthtexture, rtexture_t *viewco
 	if (r_timereport_active)
 		R_TimeReport("preparelights");
 
+#ifndef USE_GLES2 // Disable this as shadows broken, this fixes the white sky on P20
 	// render all the shadowmaps that will be used for this view
 	shadowmapping = R_Shadow_ShadowMappingEnabled();
 	if (shadowmapping || r_shadow_shadowmapatlas_modelshadows_size)
@@ -5896,6 +5953,7 @@ void R_RenderScene(int viewfbo, rtexture_t *viewdepthtexture, rtexture_t *viewco
 	// render prepass deferred lighting if r_shadow_deferred is on, this produces light buffers that will be sampled in forward pass
 	if (r_shadow_usingdeferredprepass)
 		R_Shadow_DrawPrepass();
+#endif
 
 	// now we begin the forward pass of the view render
 	if (r_depthfirst.integer >= 1 && cl.csqc_vidvars.drawworld && r_refdef.scene.worldmodel && r_refdef.scene.worldmodel->DrawDepth)
@@ -8578,7 +8636,11 @@ void RSurf_SetupDepthAndCulling(bool ui)
 	// submodels are biased to avoid z-fighting with world surfaces that they
 	// may be exactly overlapping (avoids z-fighting artifacts on certain
 	// doors and things in Quake maps)
+#ifdef USE_GLES2 // Something up with depth precision, need this otherwise the weapon is over the HUD
+	GL_DepthRange(0, (rsurface.texture->currentmaterialflags & MATERIALFLAG_SHORTDEPTHRANGE) ? 0.5 : 1);
+#else
 	GL_DepthRange(0, (rsurface.texture->currentmaterialflags & MATERIALFLAG_SHORTDEPTHRANGE) ? 0.0625 : 1);
+#endif
 	GL_PolygonOffset(rsurface.basepolygonfactor + rsurface.texture->biaspolygonfactor, rsurface.basepolygonoffset + rsurface.texture->biaspolygonoffset);
 	GL_DepthTest(!ui && !(rsurface.texture->currentmaterialflags & MATERIALFLAG_NODEPTHTEST));
 	GL_CullFace((rsurface.texture->currentmaterialflags & MATERIALFLAG_NOCULLFACE) ? GL_NONE : r_refdef.view.cullface_back);

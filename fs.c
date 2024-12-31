@@ -444,7 +444,11 @@ char fs_gamedir[MAX_OSPATH];
 char fs_basedir[MAX_OSPATH];
 static pack_t *fs_selfpack = NULL;
 
+
 // list of active game directories
+#ifdef __ANDROID__
+char fs_cddir[MAX_OSPATH];
+#endif
 int fs_numgamedirs = 0;
 char fs_gamedirs[MAX_GAMEDIRS][MAX_QPATH];
 
@@ -1387,6 +1391,11 @@ FS_AddGameHierarchy
 static void FS_AddGameHierarchy (const char *dir)
 {
 	char vabuf[1024];
+
+#ifdef __ANDROID__
+    if(*fs_cddir)
+        FS_AddGameDirectory(va(vabuf, sizeof(vabuf), "%s%s/", fs_cddir, dir));
+#endif
 	// Add the common game directory
 	FS_AddGameDirectory (va(vabuf, sizeof(vabuf), "%s%s/", fs_basedir, dir));
 
@@ -2211,6 +2220,15 @@ static void FS_Init_Dir (void)
 	if (fs_basedir[0] && fs_basedir[strlen(fs_basedir) - 1] != '/' && fs_basedir[strlen(fs_basedir) - 1] != '\\')
 		dp_strlcat(fs_basedir, "/", sizeof(fs_basedir));
 
+#ifdef __ANDROID__
+    if((i = Sys_CheckParm("-cddir")) && i < sys.argc - 1)
+		dpsnprintf(fs_cddir, sizeof(fs_cddir), "%s/", sys.argv[i+1]);
+#endif
+
+#ifdef __ANDROID__
+	extern const char *userFilesPath_c;
+	dpsnprintf(fs_userdir, sizeof(fs_userdir), "%s/darkplaces_xonotic/", userFilesPath_c);
+#else
 	// Add the personal game directory
 	if((i = Sys_CheckParm("-userdir")) && i < sys.argc - 1)
 		dpsnprintf(fs_userdir, sizeof(fs_userdir), "%s/", sys.argv[i+1]);
@@ -2263,7 +2281,7 @@ static void FS_Init_Dir (void)
 		Con_DPrintf("userdir %i is the winner\n", dirmode);
 #endif
 	}
-
+#endif
 	// if userdir equal to basedir, clear it to avoid confusion later
 	if (!strcmp(fs_basedir, fs_userdir))
 		fs_userdir[0] = 0;

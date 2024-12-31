@@ -66,7 +66,7 @@ int cl_available = true;
 qbool vid_supportrefreshrate = false;
 
 static qbool vid_usingmouse = false;
-static qbool vid_usingmouse_relativeworks = false; // SDL2 workaround for unimplemented RelativeMouse mode
+static qbool vid_usingmouse_relativeworks = true; // SDL2 workaround for unimplemented RelativeMouse mode
 static qbool vid_usinghidecursor = false;
 static qbool vid_hasfocus = false;
 static qbool vid_wmborder_waiting, vid_wmborderless;
@@ -364,7 +364,7 @@ qbool VID_ShowingKeyboard(void)
 
 static void VID_SetMouse(qbool relative, qbool hidecursor)
 {
-#ifndef DP_MOBILETOUCH
+//#ifndef DP_MOBILETOUCH
 #ifdef MACOSX
 	if(relative)
 		if(vid_usingmouse && (vid_usingnoaccel != !!apple_mouse_noaccel.integer))
@@ -434,7 +434,7 @@ static void VID_SetMouse(qbool relative, qbool hidecursor)
 		vid_usinghidecursor = hidecursor;
 		SDL_ShowCursor( hidecursor ? SDL_DISABLE : SDL_ENABLE);
 	}
-#endif
+//#endif
 }
 
 // multitouch[10][] represents the mouse pointer
@@ -933,6 +933,10 @@ static void IN_Move_TouchScreen_Quake(void)
 	cl.viewangles[1] -= aim[0] * cl_yawspeed.value * cl.realframetime;
 }
 
+#ifdef __ANDROID__
+void IN_Move_Android( void );
+#endif
+
 void IN_Move( void )
 {
 	static int old_x = 0, old_y = 0;
@@ -1010,6 +1014,9 @@ void IN_Move( void )
 	}
 
 	//Con_Printf("Mouse position: in_mouse %f %f in_windowmouse %f %f\n", in_mouse_x, in_mouse_y, in_windowmouse_x, in_windowmouse_y);
+#ifdef __ANDROID__
+    IN_Move_Android( );
+#endif
 
 	VID_BuildJoyState(&joystate);
 	VID_ApplyJoyState(&joystate);
@@ -1209,6 +1216,7 @@ void Sys_SDL_HandleEvents(void)
 					case SDL_WINDOWEVENT_FOCUS_LOST:
 						vid_hasfocus = false;
 						break;
+#ifndef __ANDROID__
 					case SDL_WINDOWEVENT_CLOSE:
 						host.state = host_shutdown;
 						break;
@@ -1222,12 +1230,14 @@ void Sys_SDL_HandleEvents(void)
 						// this event can't be relied on in fullscreen, see SDL_WINDOWEVENT_MOVED above
 						vid.mode.display = event.window.data1;
 						break;
+#endif
 					}
 				}
 				break;
 			case SDL_DISPLAYEVENT: // Display hotplugging
 				switch (event.display.event)
 				{
+#ifndef __ANDROID__
 					case SDL_DISPLAYEVENT_CONNECTED:
 						Con_Printf(CON_WARN "Display %i connected: %s\n", event.display.display, SDL_GetDisplayName(event.display.display));
 #ifdef __linux__
@@ -1246,6 +1256,7 @@ void Sys_SDL_HandleEvents(void)
 						break;
 					case SDL_DISPLAYEVENT_ORIENTATION:
 						break;
+#endif
 				}
 				break;
 			case SDL_TEXTEDITING:
@@ -1541,7 +1552,7 @@ void VID_Init (void)
 #endif
 #endif
 #ifdef DP_MOBILETOUCH
-	Cvar_SetValueQuick(&vid_touchscreen, 1);
+	//Cvar_SetValueQuick(&vid_touchscreen, 1);
 #endif
 	Cvar_RegisterVariable(&joy_sdl2_trigger_deadzone);
 
@@ -1720,7 +1731,7 @@ static qbool VID_InitModeGL(const viddef_mode_t *mode)
 
 #ifdef DP_MOBILETOUCH
 	// mobile platforms are always fullscreen, we'll get the resolution after opening the window
-	mode->fullscreen = true;
+//	mode->fullscreen = true;
 	// hide the menu with SDL_WINDOW_BORDERLESS
 	windowflags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS;
 #endif
@@ -1819,6 +1830,7 @@ static qbool VID_InitModeGL(const viddef_mode_t *mode)
 	// apply vid_vsync
 	Cvar_Callback(&vid_vsync);
 
+
 	vid_hidden = false;
 	vid_activewindow = true;
 	vid_hasfocus = true;
@@ -1828,6 +1840,9 @@ static qbool VID_InitModeGL(const viddef_mode_t *mode)
 	// clear to black (loading plaque will be seen over this)
 	GL_Clear(GL_COLOR_BUFFER_BIT, NULL, 1.0f, 0);
 	VID_Finish(); // checks vid_hidden
+#ifdef __ANDROID__
+    SDL_GL_SetSwapInterval(1);
+#endif
 
 	GL_Setup();
 

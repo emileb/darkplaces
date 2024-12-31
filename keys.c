@@ -53,7 +53,7 @@ static void Key_History_Init(void)
 	ConBuffer_Init(&history, HIST_TEXTSIZE, HIST_MAXLINES, zonemempool);
 
 // not necessary for mobile
-#ifndef DP_MOBILETOUCH
+//#ifndef DP_MOBILETOUCH
 	historyfile = FS_OpenRealFile("darkplaces_history.txt", "rb", false); // rb to handle unix line endings on windows too
 	if(historyfile)
 	{
@@ -85,7 +85,7 @@ static void Key_History_Init(void)
 
 		FS_Close(historyfile);
 	}
-#endif
+//#endif
 
 	history_line = -1;
 }
@@ -93,7 +93,7 @@ static void Key_History_Init(void)
 static void Key_History_Shutdown(void)
 {
 // not necessary for mobile
-#ifndef DP_MOBILETOUCH
+//#ifndef DP_MOBILETOUCH
 	qfile_t *historyfile = FS_OpenRealFile("darkplaces_history.txt", "w", false);
 	if(historyfile)
 	{
@@ -106,7 +106,7 @@ static void Key_History_Shutdown(void)
 	}
 	else
 		Con_Print(CON_ERROR "Couldn't write darkplaces_history.txt\n");
-#endif
+//#endif
 
 	ConBuffer_Shutdown(&history);
 }
@@ -1885,6 +1885,13 @@ Key_Event (int key, int ascii, qbool down)
 	if(keydest == key_void)
 		return;
 
+#ifdef __ANDROID__ // Want enter key to get out of demo so dont have to press back button
+    if(down && key == K_ENTER && cls.demoplayback && key_dest != key_menu &&  key_dest != key_menu_grabbed )
+    {
+        MR_ToggleMenu(1);
+        return;
+    }
+#endif
 	// key_consoleactive is a flag not a key_dest because the console is a
 	// high priority overlay ontop of the normal screen (designed as a safety
 	// feature so that developers and users can rescue themselves from a bad

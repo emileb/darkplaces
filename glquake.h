@@ -817,6 +817,7 @@ extern void (GLAPIENTRY *qglViewport)(GLint x, GLint y, GLsizei width, GLsizei h
 #define qglCheckFramebufferStatus glCheckFramebufferStatus
 #define qglClear glClear
 #define qglClearColor glClearColor
+#define qglClearDepthf glClearDepthf
 #define qglClearDepth glClearDepth
 #define qglClearStencil glClearStencil
 #define qglColorMask glColorMask
