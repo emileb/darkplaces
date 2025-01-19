@@ -1830,32 +1830,40 @@ static const char *FS_SysCheckGameDir(const char *gamedir, char *buf, size_t buf
 FS_CheckGameDir
 ================
 */
-const char *FS_CheckGameDir(const char *gamedir)
-{
-	const char *ret;
-	static char buf[8192];
-	char vabuf[1024];
+const char *FS_CheckGameDir(const char *gamedir) {
+    const char *ret;
+    static char buf[8192];
+    char vabuf[1024];
 
-	if (FS_CheckNastyPath(gamedir, true))
-		return NULL;
+    if (FS_CheckNastyPath(gamedir, true))
+        return NULL;
 
-	ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_userdir, gamedir), buf, sizeof(buf));
-	if(ret)
-	{
-		if(!*ret)
-		{
-			// get description from basedir
-			ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_basedir, gamedir), buf, sizeof(buf));
-			if(ret)
-				return ret;
-			return "";
-		}
-		return ret;
-	}
+    ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_userdir, gamedir), buf,
+                             sizeof(buf));
+    if (ret) {
+        if (!*ret) {
+            // get description from basedir
+            ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_basedir, gamedir), buf,
+                                     sizeof(buf));
+            if (ret)
+                return ret;
+            return "";
+        }
+        return ret;
+    }
 
 	ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_basedir, gamedir), buf, sizeof(buf));
-	if(ret)
-		return ret;
+    if (ret)
+        return ret;
+
+#ifdef __ANDROID__
+    if(*fs_cddir)
+    {
+        ret = FS_SysCheckGameDir(va(vabuf, sizeof(vabuf), "%s%s/", fs_cddir, gamedir), buf, sizeof(buf));
+        if(ret)
+            return ret;
+    }
+#endif
 
 	return fs_checkgamedir_missing;
 }
