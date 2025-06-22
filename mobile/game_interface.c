@@ -319,6 +319,22 @@ void PortableLookYaw(int mode, float yaw)
 	}
 }
 
+bool PortableSetAlwaysRun(bool run)
+{
+    if(run)
+    {
+        Cvar_SetValueQuick (&cl_forwardspeed, 400);
+        Cvar_SetValueQuick (&cl_backspeed, 400);
+    }
+    else
+    {
+        Cvar_SetValueQuick (&cl_forwardspeed, 200);
+        Cvar_SetValueQuick (&cl_backspeed, 200);
+    }
+    return false;
+}
+
+
 /////////////////////
 // Movement handling
 ////
