@@ -1,7 +1,7 @@
 #include "quakedef.h"
 
 #include "game_interface.h"
-
+#include "CStringFifo.h"
 
 #include "SDL.h"
 #include "SDL_keycode.h"
@@ -9,12 +9,14 @@
 static float forwardmove, sidemove; //Joystick mode
 static float look_pitch_mouse,look_pitch_abs,look_pitch_joy;
 static float look_yaw_mouse,look_yaw_joy;
+static CStringFIFO m_CmdFifo;
 
 void Host_Main(void);
 int Sys_Main(int argc, char *argv[]);
 void PortableInit(int argc,const char ** argv)
 {
 	LOGI("PortableInit");
+    cstr_fifo_init(&m_CmdFifo);
 
     Sys_Main(argc, argv);
 }
@@ -216,12 +218,11 @@ void PortableAction(int state, int action)
 	}
 }
 
-static const char * quickCommand = 0;
 void PortableCommand(const char * cmd)
 {
 	static char cmdBuffer[256];
 	dpsnprintf(cmdBuffer, 256, "%s\n", cmd);
-	quickCommand = cmdBuffer;
+    cstr_fifo_push(&m_CmdFifo, cmdBuffer);
 }
 
 
@@ -342,11 +343,12 @@ bool PortableSetAlwaysRun(bool run)
 
 void IN_Move_Android( void )
 {
-	if (quickCommand)
-	{
-        Cbuf_AddText(cmd_local, quickCommand);
-		quickCommand = 0;
-	}
+    char *consoleCmd;
+    while((consoleCmd = cstr_fifo_pop(&m_CmdFifo)))
+    {
+        Cbuf_AddText(cmd_local, consoleCmd);
+        free(consoleCmd);
+    }
 
     int blockGamepad( void );
     int blockMove = blockGamepad() & ANALOGUE_AXIS_FWD;
